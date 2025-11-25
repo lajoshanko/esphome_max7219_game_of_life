@@ -3,10 +3,6 @@
 This project drives a **8×32 MAX7219 LED matrix (4 chained modules)** controlled by a **NodeMCU (ESP8266)** 
 as a replacement for a **10-inch 1U rack blank plate** with a 3d printed panel. 
 
-<img src="https://github.com/user-attachments/assets/085b47c2-a426-47de-8f96-0789923b36ef" alt="Alt Text" style="width:50%; height:auto;">
-<img src="https://github.com/user-attachments/assets/2b944c0f-ced1-4b70-b196-891e44c1a80c" alt="Alt Text" style="width:63%; height:auto;">
-<img src="https://github.com/user-attachments/assets/9b6e629b-ddf9-4a2e-89ab-f45784e187c8" alt="Alt Text" style="width:33%; height:auto;">
-
 It runs a fully automated version of **Conway’s Game of Life**, with:
 
 - Automatic reseeding when the simulation dies, freezes, or enters a loop  
@@ -15,6 +11,11 @@ It runs a fully automated version of **Conway’s Game of Life**, with:
 - A clean front-panel animation ideal for server racks, studios, or home labs
 
 The firmware continuously generates living pixel patterns—organic, surprising, and perfect for visual ambience in a rack setup.
+
+<img src="https://github.com/user-attachments/assets/085b47c2-a426-47de-8f96-0789923b36ef" alt="Alt Text" style="width:50%; height:auto;">
+<img src="https://github.com/user-attachments/assets/2b944c0f-ced1-4b70-b196-891e44c1a80c" alt="Alt Text" style="width:63%; height:auto;">
+<img src="https://github.com/user-attachments/assets/9b6e629b-ddf9-4a2e-89ab-f45784e187c8" alt="Alt Text" style="width:33%; height:auto;">
+
 
 ---
 
