@@ -1,0 +1,319 @@
+esphome:
+  name: max7219_gol
+  friendly_name: max7219 Game of Life
+
+esp8266:
+  board: nodemcuv2
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key:
+
+ota:
+  - platform: esphome
+    password:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Max7219 Fallback Hotspot"
+    password: "sfpmWmkltxpw"
+
+captive_portal:
+
+spi:
+  clk_pin: GPIO14    # CLK (D5)
+  mosi_pin: GPIO13   # MOSI (D7)
+
+# ================== GLOBALS ==================
+globals:
+  - id: gol_initial_groups
+    type: int
+    restore_value: yes
+    initial_value: '5'
+
+  # "Speed" = how many display refreshes per generation (>=1, higher = slower)
+  - id: gol_speed
+    type: int
+    restore_value: yes
+    initial_value: '3'
+
+  - id: gol_generation
+    type: int
+    restore_value: no
+    initial_value: '0'
+
+  - id: gol_reseed_flag
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: matrix_intensity
+    type: int
+    restore_value: yes
+    initial_value: '5'
+
+# ================== HA ENTITIES ==================
+number:
+  - platform: template
+    name: "GOL Initial Groups"
+    id: gol_initial_groups_number
+    min_value: 1
+    max_value: 20
+    step: 1
+    optimistic: true
+    restore_value: true
+    initial_value: 5
+    set_action:
+      - lambda: |-
+          id(gol_initial_groups) = (int)x;
+
+  - platform: template
+    name: "GOL Speed"
+    id: gol_speed_number
+    min_value: 1
+    max_value: 10
+    step: 1
+    optimistic: true
+    restore_value: true
+    initial_value: 3
+    set_action:
+      - lambda: |-
+          id(gol_speed) = (int)x;
+
+  - platform: template
+    name: "Matrix Intensity"
+    id: matrix_intensity_number
+    min_value: 0
+    max_value: 15
+    step: 1
+    optimistic: true
+    restore_value: true
+    initial_value: 5
+    set_action:
+      - lambda: |-
+          id(matrix_intensity) = (int)x;
+
+sensor:
+  - platform: template
+    name: "GOL Generation"
+    id: gol_generation_sensor
+    unit_of_measurement: "gen"
+    accuracy_decimals: 0
+    update_interval: 1s
+    lambda: |-
+      return (float) id(gol_generation);
+
+button:
+  - platform: template
+    name: "GOL Reseed"
+    id: gol_reseed_button
+    on_press:
+      - lambda: |-
+          id(gol_reseed_flag) = true;
+
+# ================== DISPLAY + GAME OF LIFE ==================
+display:
+  - platform: max7219digit
+    id: gol_display
+    cs_pin: GPIO12         # CS
+    num_chips: 4           # 4 * 8x8 = 8x32
+    intensity: 5           # initial value, then controlled from HA
+    update_interval: 50ms  # render refresh; simulation speed controlled in code
+    lambda: |-
+      static bool initialized = false;
+
+      const int WIDTH = 32;
+      const int HEIGHT = 8;
+      const int HISTORY_LEN = 8;  // how many past generations to remember
+
+      // Current and next generation grids
+      static bool grid[HEIGHT][WIDTH];
+      static bool next_grid[HEIGHT][WIDTH];
+
+      // History of previous generations: history[0] = most recent
+      static bool history[HISTORY_LEN][HEIGHT][WIDTH];
+      static int history_size = 0;  // how many entries are valid (0..HISTORY_LEN)
+
+      // For speed control: how many frames since last generation step
+      static int frame_counter = 0;
+
+      // ---------- Intensity from HA ----------
+      int inten = id(matrix_intensity);
+      if (inten < 0) inten = 0;
+      if (inten > 15) inten = 15;
+      it.intensity(inten);
+
+      // ---------- Helper: reseed world ----------
+      auto reset_grid = [&]() {
+        // clear current, next and history
+        for (int y = 0; y < HEIGHT; y++) {
+          for (int x = 0; x < WIDTH; x++) {
+            grid[y][x] = false;
+            next_grid[y][x] = false;
+          }
+        }
+
+        for (int h = 0; h < HISTORY_LEN; h++) {
+          for (int y = 0; y < HEIGHT; y++) {
+            for (int x = 0; x < WIDTH; x++) {
+              history[h][y][x] = false;
+            }
+          }
+        }
+        history_size = 0;
+        frame_counter = 0;
+        id(gol_generation) = 0;
+
+        int groups = id(gol_initial_groups);
+        if (groups < 1) groups = 1;
+        if (groups > 50) groups = 50;  // sanity cap
+
+        // N random "plus" shaped groups
+        for (int g = 0; g < groups; g++) {
+          int gx = random_uint32() % WIDTH;
+          int gy = random_uint32() % HEIGHT;
+
+          grid[gy][gx] = true;
+          if (gx > 0)          grid[gy][gx - 1] = true;
+          if (gx < WIDTH - 1)  grid[gy][gx + 1] = true;
+          if (gy > 0)          grid[gy - 1][gx] = true;
+          if (gy < HEIGHT - 1) grid[gy + 1][gx] = true;
+        }
+      };
+
+      // ---------- First run ----------
+      if (!initialized) {
+        reset_grid();
+        initialized = true;
+      }
+
+      // ---------- Manual reseed from HA ----------
+      if (id(gol_reseed_flag)) {
+        reset_grid();
+        id(gol_reseed_flag) = false;
+      }
+
+      // ---------- Draw current generation ----------
+      for (int y = 0; y < HEIGHT; y++) {
+        for (int x = 0; x < WIDTH; x++) {
+          if (grid[y][x]) {
+            it.draw_pixel_at(x, y, COLOR_ON);
+          }
+        }
+      }
+
+      // ---------- Speed control ----------
+      // Inverted speed handling: higher number = faster updates
+      int speed = id(gol_speed);
+      if (speed < 1) speed = 1;
+      if (speed > 10) speed = 10;
+
+      // Convert speed 1..10  →  delay 10..1
+      int delay_frames = 11 - speed;
+
+      // Count frames, advance simulation only when delay reached
+      frame_counter++;
+      if (frame_counter < delay_frames) {
+        return;  // skip stepping
+      }
+      frame_counter = 0;
+
+      // ================== GAME OF LIFE STEP ==================
+      int alive_count = 0;
+      bool any_change = false;  // track if anything changed vs current grid
+
+      for (int y = 0; y < HEIGHT; y++) {
+        for (int x = 0; x < WIDTH; x++) {
+          int neighbors = 0;
+
+          // count neighbors
+          for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+              if (dx == 0 && dy == 0) continue;
+
+              int nx = x + dx;
+              int ny = y + dy;
+
+              if (nx < 0 || nx >= WIDTH || ny < 0 || ny >= HEIGHT) continue;
+              if (grid[ny][nx]) neighbors++;
+            }
+          }
+
+          bool alive = grid[y][x];
+          bool next_alive = alive;
+
+          // Conway's Game of Life rules
+          if (alive && (neighbors < 2 || neighbors > 3)) {
+            next_alive = false;
+          } else if (!alive && neighbors == 3) {
+            next_alive = true;
+          }
+
+          next_grid[y][x] = next_alive;
+          if (next_alive) alive_count++;
+
+          if (next_alive != alive) {
+            any_change = true;
+          }
+        }
+      }
+
+      // ---------- Detect loops up to HISTORY_LEN ----------
+      bool repeats_history = false;
+      for (int h = 0; h < history_size && !repeats_history; h++) {
+        bool same = true;
+        for (int y = 0; y < HEIGHT && same; y++) {
+          for (int x = 0; x < WIDTH; x++) {
+            if (next_grid[y][x] != history[h][y][x]) {
+              same = false;
+              break;
+            }
+          }
+        }
+        if (same) {
+          repeats_history = true;
+        }
+      }
+
+      // ---------- Restart conditions ----------
+      if (alive_count == 0 || !any_change || repeats_history) {
+        // board died, froze, or entered a loop ⇒ reseed
+        reset_grid();
+      } else {
+        // ---------- Advance to next generation ----------
+        for (int y = 0; y < HEIGHT; y++) {
+          for (int x = 0; x < WIDTH; x++) {
+            grid[y][x] = next_grid[y][x];
+          }
+        }
+
+        // Update generation counter
+        id(gol_generation)++;
+
+        // Update history: shift older entries down, store current grid as newest (history[0])
+        if (history_size < HISTORY_LEN) {
+          history_size++;
+        }
+
+        for (int h = history_size - 1; h > 0; h--) {
+          for (int y = 0; y < HEIGHT; y++) {
+            for (int x = 0; x < WIDTH; x++) {
+              history[h][y][x] = history[h - 1][y][x];
+            }
+          }
+        }
+
+        for (int y = 0; y < HEIGHT; y++) {
+          for (int x = 0; x < WIDTH; x++) {
+            history[0][y][x] = grid[y][x];
+          }
+        }
+      }
