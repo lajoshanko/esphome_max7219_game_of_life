@@ -1,7 +1,7 @@
 # Game of Life – MAX7219 (ESPHome)
 
 This project drives a **8×32 MAX7219 LED matrix (4 chained modules)** controlled by a **NodeMCU (ESP8266)** 
-and is used as a replacement for a **10-inch 1U rack blank plate replacement** with a 3d printed panel. 
+as a replacement for a **10-inch 1U rack blank plate** with a 3d printed panel. 
 
 <img src="https://github.com/user-attachments/assets/085b47c2-a426-47de-8f96-0789923b36ef" alt="Alt Text" style="width:50%; height:auto;">
 <img src="https://github.com/user-attachments/assets/2b944c0f-ced1-4b70-b196-891e44c1a80c" alt="Alt Text" style="width:63%; height:auto;">
