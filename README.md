@@ -103,7 +103,7 @@ Immediately clears the simulation and seeds new random cells.
 
 ---
 
-##� Sensor (Read-Only)
+## Sensor (Read-Only)
 
 ### **GOL Generation**  
 **Entity:** `sensor.gol_generation_sensor`  
