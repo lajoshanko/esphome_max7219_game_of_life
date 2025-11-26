@@ -123,7 +123,7 @@ button:
 display:
   - platform: max7219digit
     id: gol_display
-    cs_pin: GPIO12         # CS
+    cs_pin: GPIO12         # D6
     num_chips: 4           # 4 * 8x8 = 8x32
     intensity: 5           # initial value, then controlled from HA
     update_interval: 50ms  # render refresh; simulation speed controlled in code
