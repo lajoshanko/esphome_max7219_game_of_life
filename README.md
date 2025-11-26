@@ -12,6 +12,8 @@ It runs a fully automated version of **Conway’s Game of Life**, with:
 
 The firmware continuously generates living pixel patterns—organic, surprising, and perfect for visual ambience in a rack setup.
 
+[The 3D model](https://makerworld.com/en/models/2043316-1u-10-inch-panel-cover-for-max7219) for the panel(Still in prototyping phase, so any feedbacks are welcome)
+
 <img src="https://github.com/user-attachments/assets/085b47c2-a426-47de-8f96-0789923b36ef" alt="Alt Text" style="width:50%; height:auto;">
 <img src="https://github.com/user-attachments/assets/2b944c0f-ced1-4b70-b196-891e44c1a80c" alt="Alt Text" style="width:63%; height:auto;">
 <img src="https://github.com/user-attachments/assets/9b6e629b-ddf9-4a2e-89ab-f45784e187c8" alt="Alt Text" style="width:33%; height:auto;">
