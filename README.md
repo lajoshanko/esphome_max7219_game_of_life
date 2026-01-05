@@ -40,6 +40,7 @@ The firmware continuously generates living pixel patterns—organic, surprising,
 
 [The upper corne model can be found here](https://makerworld.com/en/models/2043316-1u-10-inch-panel-cover-for-max7219)
 
+<img src="https://github.com/user-attachments/assets/ce65a107-d396-48ae-a17f-53504dc08f17" alt="Alt Text" style="width:50%; height:auto;">
 <img src="https://github.com/user-attachments/assets/9d0548b4-b881-4d33-b863-7c8e39546d94" alt="Alt Text" style="width:50%; height:auto;">
 
 [The 10" 1 U panel model can be found here](https://makerworld.com/en/models/2043316-1u-10-inch-panel-cover-for-max7219) for the panel(Still in prototyping phase, so any feedback is welcome)
